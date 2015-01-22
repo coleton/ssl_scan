@@ -39,6 +39,10 @@ module SSLScan
       @ciphers.reject{|cipher| cipher[:version] != :TLSv1 }
     end
 
+    def rc4_md5
+      @ciphers.reject{|cipher| cipher[:cipher] != "RC4-MD5" }
+    end
+
     def weak_ciphers
       accepted.reject{|cipher| cipher[:weak] == false }
     end
@@ -128,8 +132,14 @@ module SSLScan
 
       strong_cipher_ctx = OpenSSL::SSL::SSLContext.new(version)
       # OpenSSL Directive For Strong Ciphers
-      # See: http://www.rapid7.com/vulndb/lookup/ssl-weak-ciphers
-      strong_cipher_ctx.ciphers = "ALL:!aNULL:!eNULL:!LOW:!EXP:RC4+RSA:+HIGH:+MEDIUM"
+      # Updated from OWASP
+      # See: https://www.owasp.org/index.php/Transport_Layer_Protection_Cheat_Sheet#Rule_-_Only_Support_Strong_Cryptographic_Ciphers
+      tmp_ciphers = "EDH+aRSA+AESGCM:EDH+aRSA+AES:DHE-RSA-AES256-SHA"
+      tmp_ciphers += ":EECDH+aRSA+AESGCM:EECDH+aRSA+AES:ECDHE-RSA-AES256-SHA"
+      tmp_ciphers += ":ECDHE-RSA-AES128-SHA:RSA+AESGCM:RSA+AES+SHA:DES-CBC3-SHA"
+      tmp_ciphers += ":-DHE-RSA-AES128-SHA:!aNULL:!eNULL:!LOW:!MD5:!EXP:!PSK:!DSS"
+      tmp_ciphers += ":!RC4:!SEED:!ECDSA:!ADH:!IDEA"
+      strong_cipher_ctx.ciphers = tmp_ciphers
 
       if strong_cipher_ctx.ciphers.flatten.include? cipher
         weak = false
