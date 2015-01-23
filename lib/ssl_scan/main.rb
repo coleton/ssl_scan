@@ -103,9 +103,9 @@ EOH
             command.execute
 
             if command.errors.empty?
-              show_results(command.results)
+              show_results(h, command.results)
             else
-              show_command_errors(h, command.errors) 
+              show_command_errors(h, command.errors)
             end
           end
         end
@@ -120,7 +120,7 @@ EOH
         end
       end
 
-    end
+      end
 
     alias_method :run, :main
 

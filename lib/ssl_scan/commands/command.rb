@@ -37,13 +37,13 @@ module SSLScan
         
         if sslv
           scanner.scan_ssl_version(sslv) do |ssl_version, cipher_name, alg_length, status|
-            unless options.no_failed && status == :failed
+            unless options.no_failed && status != :accepted
               stream.printf("%12s %10s %10s %s\n", status, ssl_version, "#{alg_length} bits",  cipher_name)
             end
           end
         else
           scanner.scan do |ssl_version, cipher_name, alg_length, status|
-            unless options.no_failed && status == :failed
+            unless options.no_failed && status != :accepted
               stream.printf "%12s %10s %10s %s\n", status, ssl_version, "#{alg_length} bits",  cipher_name
             end
           end

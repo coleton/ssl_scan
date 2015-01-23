@@ -103,6 +103,10 @@ module SSLScan
       !(weak_ciphers.empty?)
     end
 
+    def supports_rc4_md5_ciphers?
+      !(rc4_md5.empty?)
+    end
+
     def standards_compliant?
       if supports_ssl?
         return false if supports_sslv2?
