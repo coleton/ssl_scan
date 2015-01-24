@@ -1,0 +1,152 @@
+#!/usr/bin/env ruby
+
+require 'ssl_scan'
+require 'resolv'
+require 'rainbow/ext/string'
+require 'optparse'
+require 'ostruct'
+require 'ruby-progressbar'
+require 'json'
+
+module Praetorian
+
+  class SSLScan
+
+    def self.run(options)
+      @options = parse_options(options)
+
+      sslv2 = []
+      sslv3 = []
+      rc4md5 = []
+      last_percent = 0
+
+      if @options.file
+        count = 0
+        count_at = 0
+
+        File.open(@options.file).each_line do
+          count += 1
+        end
+
+        progress = ProgressBar.create(:title => 'Hosts', :starting_at => 0, :total => count)
+
+        File.open(@options.file).each_line do |line|
+          do_space = false
+          host = line.chomp
+          scanner = ::SSLScan::Scanner.new(host)
+          results = scanner.scan
+          progress.increment
+          count_at += 1
+          tmp = ''
+
+          if results.supports_sslv2?
+            sslv2 << host
+            tmp += '[-] '.color(:red) + host + ' supports SSLv2. BAD!'
+          end
+
+          if results.supports_sslv3?
+            sslv3 << host
+            tmp += "\n" if tmp != ''
+            tmp += '[-] '.color(:red) + host + ' supports SSLv3. BAD!'
+          end
+
+          if results.supports_rc4_md5_ciphers?
+            rc4md5 << host
+            tmp += "\n" if tmp != ''
+            tmp += '[-] '.color(:red) + host + ' supports RC4-MD5 Cipher. BAD!'
+          end
+
+          if @options.output
+            File.open(@options.output, 'a') do |f|
+              f.puts("Host: #{host}")
+              results.each_accepted do |accepted|
+                f.puts("\t\t#{accepted.to_json}")
+              end
+              f.puts
+            end
+          end
+
+          percent_done = ((count_at / (count + 0.0))*100).round(1)
+          (progress.log "#{tmp} \t\t #{percent_done}% Complete") if (((percent_done - last_percent) > 1) and tmp != '')
+          last_percent = percent_done
+
+        end
+
+      else
+
+        host = @options.target
+        (puts 'Invalid IP' and exit) unless !!(host =~ Resolv::IPv4::Regex)
+        scanner = ::SSLScan::Scanner.new(host)
+        results = scanner.scan
+        sslv2 << host if results.supports_sslv2?
+        sslv3 << host if results.supports_sslv3?
+        rc4md5 << host if results.supports_rc4_md5_ciphers?
+
+      end
+
+      unless sslv2.empty?
+        puts '[-]'.color(:red) + ' SSLv2 Supported Hosts:'
+        sslv2.each do |a|
+          puts a
+        end
+      end
+
+      unless sslv3.empty?
+        puts '[-]'.color(:red) + ' SSLv3 Supported Hosts:'
+        sslv3.each do |b|
+          puts b
+        end
+      end
+
+      unless rc4md5.empty?
+        puts '[-]'.color(:red) + ' RC4-MD5 Supported Hosts:'
+        rc4md5.each do |c|
+          puts c
+        end
+      end
+
+    end
+
+    def self.parse_options(args)
+      options = OpenStruct.new
+
+      opts = OptionParser.new do |opts|
+
+        opts.separator ''
+        opts.separator 'Usage: praetorian_ssl_scan [host]'
+
+        opts.separator ''
+        opts.separator 'Options:'
+
+        opts.on('-f', '--file FILE', String, 'A file containing a list of hosts to scan') do |file|
+          options.file = file
+        end
+
+        opts.on('-t', '--target IP', String, 'Target IP to scan') do |target|
+          options.target = target
+        end
+
+        opts.on('-o', '--output FILE', String, 'File to print output to') do |output|
+          options.output = output
+        end
+
+        opts.on('-h', '--help', 'Display the help text you are now reading.') do
+          puts opts
+          exit
+        end
+
+      end
+
+      opts.parse!(args)
+      options.freeze
+    end
+
+  end
+
+end
+
+if $0 == __FILE__
+
+  Praetorian::SSLScan.run(ARGV)
+
+end
