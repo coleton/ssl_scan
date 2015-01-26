@@ -6,8 +6,8 @@ require 'ssl_scan/version'
 Gem::Specification.new do |spec|
   spec.name          = "ssl_scan"
   spec.version       = SSLScan::VERSION::STRING
-  spec.authors       = ["John Faucett"]
-  spec.email         = ["jwaterfaucett@gmail.com"]
+  spec.authors       = ["John Faucett", "Coleton Pierson"]
+  spec.email         = ["jwaterfaucett@gmail.com", "coleton.pierson@praetorian.com"]
   spec.summary       = %q{Ruby SSL Scanner}
   spec.description   = %q{An SSL Scanner Library and Utility in pure Ruby}
   spec.homepage      = "https://github.com/jwaterfaucett/ssl_scan"
@@ -19,6 +19,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "fast_gettext", "~> 0.8"
+  spec.add_runtime_dependency "ruby-progressbar"
+  spec.add_runtime_dependency "rainbow"
 
   spec.add_development_dependency "bundler", "~> 1.5"
   spec.add_development_dependency "rake"
