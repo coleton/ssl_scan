@@ -1,12 +1,13 @@
 #!/usr/bin/env ruby
 
-require 'ssl_scan'
+require '../lib/ssl_scan'
 require 'resolv'
 require 'rainbow/ext/string'
 require 'optparse'
 require 'ostruct'
 require 'ruby-progressbar'
 require 'json'
+require 'socket'
 
 module Praetorian
 
@@ -33,6 +34,12 @@ module Praetorian
         File.open(@options.file).each_line do |line|
           do_space = false
           host = line.chomp
+          if host.match(/[a-zA-Z0-9]+.*[.]{1}[a-z]{1,5}$/)
+            host = IPSocket::getaddress(host)
+          elsif !(host.match(Resolv::IPv4::Regex))
+            puts "#{host} - Invalid IP"
+            next
+          end
           scanner = ::SSLScan::Scanner.new(host)
           results = scanner.scan
           progress.increment
@@ -75,7 +82,12 @@ module Praetorian
       else
 
         host = @options.target
-        (puts 'Invalid IP' and exit) unless !!(host =~ Resolv::IPv4::Regex)
+        if host.match(/[a-zA-Z0-9]+.*[.]{1}[a-z]{1,5}$/)
+          host = IPSocket::getaddress(host)
+        elsif !(host.match(Resolv::IPv4::Regex))
+          puts 'Invalid IP'
+          exit
+        end
         scanner = ::SSLScan::Scanner.new(host)
         results = scanner.scan
         sslv2 << host if results.supports_sslv2?
@@ -112,10 +124,6 @@ module Praetorian
 
       opts = OptionParser.new do |opts|
 
-        opts.separator ''
-        opts.separator 'Usage: praetorian_ssl_scan [host]'
-
-        opts.separator ''
         opts.separator 'Options:'
 
         opts.on('-f', '--file FILE', String, 'A file containing a list of hosts to scan') do |file|
@@ -146,6 +154,10 @@ module Praetorian
 end
 
 if $0 == __FILE__
+
+  ARGV << '-h' if ARGV.empty?
+
+  (ARGV = [] ; ARGV[0] = '-h') unless ARGV.include?('-f') or ARGV.include?('-t')
 
   Praetorian::SSLScan.run(ARGV)
 
