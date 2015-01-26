@@ -1,3 +1,9 @@
+# Praetorian Script Notes
+
+1. Clone the git repo.
+2. Install required gems (gem install rainbow ruby-progressbar)
+3. Run bin/praetorian_ssl_script
+
 # SSLScan
 
 SSLScan is an extraction of the the sslscan module from the [metasploit-framework](https://github.com/rapid7/metasploit-framework). It provides lower level tools for testing sslv2/3 and tls connections with servers.
